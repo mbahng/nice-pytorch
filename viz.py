@@ -1,10 +1,10 @@
 import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import TensorDataset
-from model import NICE
+from model import NormalizingFlow
 
 
-def plot_samples(model: NICE, save_fig = None): 
+def plot_samples(model: NormalizingFlow, save_fig = None): 
   """
   This is only meaningful for high dimensional datasets like MNIST. 
   """
@@ -24,7 +24,7 @@ def plot_samples(model: NICE, save_fig = None):
       plt.pause(0.1)
       plt.close()
 
-def plot_distribution(model: NICE, ds: TensorDataset, savefig = None): 
+def plot_distribution(model: NormalizingFlow, ds: TensorDataset, savefig = None): 
   """
   Only meaningful for 2-dimensional datasets. 
   Used to see how it evolves. 
@@ -47,7 +47,7 @@ def plot_distribution(model: NICE, ds: TensorDataset, savefig = None):
     # Plot the heatmap and scatter 
     plt.figure(figsize=(10, 8))
     plt.imshow(prob_density.T, extent=[-10, 10, -10, 10], origin='lower', cmap='viridis', aspect='auto') # type: ignore
-    plt.scatter(ds.tensors[0][:,0], ds.tensors[0][:,1], c="r", s=5)
+    plt.scatter(ds.tensors[0][:,0], ds.tensors[0][:,1], c="r", s=3)
     plt.colorbar(label='Probability Density')
     plt.title('Learned Probability Distribution (Flow Model)')
     if savefig:

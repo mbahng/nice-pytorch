@@ -62,6 +62,10 @@ class CouplingLayer(nn.Module):
     return x1 + x2
 
 class ScalingLayer(nn.Module): 
+  """
+  Not sure if this was part of original implementation, but without this 
+  NICE is a perfect volume preserving flow. 
+  """
 
   def __init__(self, dim: int): 
     super().__init__()
@@ -75,6 +79,9 @@ class ScalingLayer(nn.Module):
     return torch.exp(- self.log_scale_vector) * y
 
 class NICE(nn.Module): 
+  """
+  Simplest volume-preserving, finite normalizing flow model by Dinh 2014. 
+  """
 
   def __init__(self, input_dim: int, n_coupling_layers: int, neural_net_layers: int, hidden_dim: int): 
     super().__init__()
@@ -105,6 +112,4 @@ class NICE(nn.Module):
   def sample(self, n_samples: int): 
     z = self.latent_prior.sample([n_samples, self.input_dim]).view(n_samples, self.input_dim)
     return self.inverse(z)
-
-
 

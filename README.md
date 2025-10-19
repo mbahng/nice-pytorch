@@ -1,4 +1,4 @@
-# nice-pytorch
+# normalizing-flows--pytorch
 
 Implementation of NICE one of the first normalizing flow models. 
 
