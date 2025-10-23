@@ -7,7 +7,7 @@ Implementation of NICE one of the first normalizing flow models.
 ## Setup 
 ```
 conda create -n nice-pytorch python=3.13
-pip install torch matplotlib torchvision
+pip install torch matplotlib torchvision scikit-learn
 ``` 
 
 ## Implementation Details
