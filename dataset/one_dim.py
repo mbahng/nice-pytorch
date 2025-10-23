@@ -2,6 +2,7 @@ import torch
 import math
 from torch.utils.data import TensorDataset
 from sklearn.datasets import make_s_curve, make_moons, make_circles
+from torchvision import transforms, datasets 
 
 def two_gaussians(x = 0.8, N=100):
   gaussian1 = 4 + math.sqrt(x) * torch.randn(N, 2)
@@ -13,8 +14,7 @@ def two_gaussians(x = 0.8, N=100):
 
 def four_gaussians(N=100):
   """
-  More complex toy dataset with 4 Gaussian components arranged in a ring pattern
-  plus a central Gaussian, creating a more challenging multimodal distribution.
+  Toy dataset with 4 Gaussian components arranged in a ring pattern
   """
   n_per_mode = N // 5
 
@@ -57,8 +57,34 @@ def circles(N=100, scale=0.5, noise=0.05):
   Y = torch.tensor(4 * Y, dtype=torch.float) 
   return TensorDataset(Y)
 
-def s_curve(): 
-  ...
+def s_curve(N = 100, noise=0.05): 
+  Y, _ = make_s_curve(N, noise=noise) 
+  Y = torch.tensor(4 * Y, dtype=torch.float) 
+  return TensorDataset(Y)
 
-def swiss_roll(): 
-  ...
+def swiss_roll(N = 100, noise = 0.05): 
+  Y, _ = swiss_roll(N, noise=noise) 
+  Y = torch.tensor(4 * Y, dtype=torch.float) 
+  return TensorDataset(Y)
+
+def mnist(): 
+  transform = transforms.Compose([
+    transforms.ToTensor(), 
+    transforms.Lambda(lambda x: torch.flatten(x))
+  ])
+  return datasets.MNIST(root='./dataset', train=True, transform=transform, download=True)
+
+def cifar10(): 
+  transform = transforms.Compose([
+    transforms.ToTensor(), 
+    transforms.Lambda(lambda x: torch.flatten(x))
+  ])
+  return datasets.CIFAR10(root='./dataset', train=True, transform=transform, download=True)
+
+def svhn(): 
+  transform = transforms.Compose([
+    transforms.ToTensor(), 
+    transforms.Lambda(lambda x: torch.flatten(x))
+  ])
+  return datasets.SVHN(root='./dataset', train=True, transform=transform, download=True)
+

@@ -1,4 +1,6 @@
 __pycache__/
-dataset/MNIST/
+dataset/* 
+!dataset/__init__.py
+!dataset/one_dim.py
+!dataset/two_dim.py
 .DS_Store
-dataset/cifar*
