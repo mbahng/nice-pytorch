@@ -1,6 +1,6 @@
 # normalizing-flows--pytorch
 
-Implementation of normalizing flow models: NICE, RealNVP, Glow, cGlow. All trained on M3 MacBook Pro. 
+Implementation of normalizing flow models: NICE, RealNVP, Glow, cGlow.
 
 | Figure 1 | Figure 2 |
 |----------|----------|

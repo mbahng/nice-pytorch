@@ -35,7 +35,8 @@ class CouplingLayer(nn.Module):
     super().__init__()
     self.idim = dim  
     self.odim = dim
-    self.mask = self._init_mask(mask_first)
+    self.register_buffer("mask", self._init_mask(mask_first))
+    
     self.mlp = self.MLP(dim, hdim, depth=neural_net_layers)
 
   def _init_mask(self, mask_first: bool): 
@@ -86,7 +87,7 @@ class NICE(nn.Module):
   Simplest finite normalizing flow model by Dinh 2014. 
   """
 
-  def __init__(self, idim: Size, n_coupling_layers: int, neural_net_layers: int, hdim: Size): 
+  def __init__(self, idim: Size, n_coupling_layers: int, neural_net_layers: int, hdim: Size, device): 
     super().__init__()
     self.idim = idim
 
@@ -98,6 +99,8 @@ class NICE(nn.Module):
 
     self.scaling_layer = ScalingLayer(idim)
     self.latent_prior = LogisticDistribution()
+    self.device = device 
+    self.to(device)
 
   def forward(self, x: Tensor): 
     logdet_accum = 0.0
@@ -114,7 +117,6 @@ class NICE(nn.Module):
     return z 
 
   def sample(self, n_samples: int): 
-    sample_size = torch.Size([n_samples, *self.idim]) 
-    z = self.latent_prior.sample(sample_size)
+    z = self.latent_prior.sample([n_samples, *self.idim]).to(self.device)
     return self.inverse(z)
 

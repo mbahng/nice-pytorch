@@ -68,8 +68,9 @@ class AffineCouplingLayer1d(nn.Module):
     super().__init__()
 
     self.idim = idim
+    # register this as buffer so it's automatically moved to devices
+    self.register_buffer("mask", self._init_mask(mask_first))
 
-    self.mask = self._init_mask(mask_first)
     self.s = self.MLP(idim, hdim, depth=neural_net_layers)
     self.t = self.MLP(idim, hdim, depth=neural_net_layers)
 
@@ -132,7 +133,8 @@ class AffineCouplingLayer2d(nn.Module):
     super().__init__()
     assert len(idim) >= 2 
     self.idim = idim 
-    self.mask = self._init_mask(mask_first) 
+    self.register_buffer("mask", self._init_mask(mask_first)) 
+    
 
     self.s = self.CNN(idim, depth=neural_net_layers) 
     self.t = self.CNN(idim, depth=neural_net_layers) 
@@ -177,7 +179,7 @@ class RealNVP(nn.Module):
   affine coupling layer, and convolutions to process 2d images directly. 
   """
 
-  def __init__(self, idim: Size, n_coupling_layers: int, neural_net_layers: int, hdim: Size): 
+  def __init__(self, idim: Size, n_coupling_layers: int, neural_net_layers: int, hdim: Size, device): 
     super().__init__()
     self.idim = idim
     
@@ -189,6 +191,8 @@ class RealNVP(nn.Module):
     self.coupling_layers = nn.ModuleList(coupling_layers)
 
     self.latent_prior = LogisticDistribution()
+    self.device = device
+    self.to(device)
 
   def forward(self, x: Tensor): 
     logdet_accum = 0.0
@@ -204,6 +208,6 @@ class RealNVP(nn.Module):
     return z 
 
   def sample(self, n_samples: int): 
-    z = self.latent_prior.sample([n_samples, *self.idim])
+    z = self.latent_prior.sample([n_samples, *self.idim]).to(self.device)
     return self.inverse(z)
 

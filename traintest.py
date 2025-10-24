@@ -8,7 +8,7 @@ def train_nice(model, dataloader, optimizer, device):
   model.train()
   total_loss = 0.0
 
-  for batch in dataloader: 
+  for batch in tqdm(dataloader): 
     x = batch[0].to(device)
     x = x.view(x.size(0), *model.idim)
     x += torch.rand_like(x) / 256

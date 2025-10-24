@@ -2,7 +2,6 @@ import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import TensorDataset
 from model import *
-from typing import Union
 
 def plot_distribution(model, ds: TensorDataset, savefig = None): 
   """
