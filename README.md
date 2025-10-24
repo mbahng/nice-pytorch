@@ -6,7 +6,7 @@ Implementation of normalizing flow models: NICE, RealNVP, Glow, cGlow. All train
 |----------|----------|
 | ![image](fig/readme/two_gaussians.png) | ![image](fig/readme/moons.png) | 
 | NICE fit on two Gaussians | RealNVP fit on Moons |
-| ![image](fig/readme/nice_mnist.png) | ![image](fig/readme/two_gaussians.png) |
+| ![image](fig/readme/nice_mnist.png) | ![image](fig/readme/realnvp_mnist.png) |
 | NICE sample generation for MNIST | RealNVP sample generation for MNIST |
 
 Setup. 
