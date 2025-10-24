@@ -12,7 +12,7 @@ Implementation of normalizing flow models: NICE, RealNVP, Glow, cGlow. All train
 Setup. 
 ```
 conda create -n nice-pytorch python=3.13
-pip install torch matplotlib torchvision scikit-learn
+pip install torch matplotlib torchvision scikit-learn tqdm
 ``` 
 
 Original Repo: https://github.com/DakshIdnani/pytorch-nice (has a obvious and easily fixable bugs in it tho)

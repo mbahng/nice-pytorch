@@ -22,7 +22,7 @@ def plot_distribution(model, ds: TensorDataset, savefig = None):
 
     # Compute log-likelihood for each point
     _, log_likelihood = model(grid_points)
-    log_likelihood = log_likelihood.reshape(200, 200)
+    log_likelihood = log_likelihood.detach().cpu().reshape(200, 200)
 
     # Convert to probability density
     prob_density = torch.exp(log_likelihood)
