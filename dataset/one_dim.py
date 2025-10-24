@@ -67,21 +67,21 @@ def swiss_roll(N = 100, noise = 0.05):
   Y = torch.tensor(4 * Y, dtype=torch.float) 
   return TensorDataset(Y)
 
-def mnist(): 
+def mnist_flat(): 
   transform = transforms.Compose([
     transforms.ToTensor(), 
     transforms.Lambda(lambda x: torch.flatten(x))
   ])
   return datasets.MNIST(root='./dataset', train=True, transform=transform, download=True)
 
-def cifar10(): 
+def cifar10_flat(): 
   transform = transforms.Compose([
     transforms.ToTensor(), 
     transforms.Lambda(lambda x: torch.flatten(x))
   ])
   return datasets.CIFAR10(root='./dataset', train=True, transform=transform, download=True)
 
-def svhn(): 
+def svhn_flat(): 
   transform = transforms.Compose([
     transforms.ToTensor(), 
     transforms.Lambda(lambda x: torch.flatten(x))

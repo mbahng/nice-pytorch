@@ -1,34 +1,17 @@
 import matplotlib.pyplot as plt
 import torch
 from torch.utils.data import TensorDataset
-from model import NormalizingFlow
+from model import *
+from typing import Union
 
-
-def plot_samples(model: NormalizingFlow, save_fig = None): 
-  """
-  This is only meaningful for high dimensional datasets like MNIST. 
-  """
-  model.eval()
-  with torch.no_grad(): 
-    input_dim = (28, 28)
-    img = model.sample(25).reshape(-1, *input_dim).detach().cpu().numpy()
-    fig, axes = plt.subplots(5, 5, figsize=(10, 10))
-    for i, ax in enumerate(axes.flat):
-        ax.imshow(img[i], cmap='gray'); ax.axis('off')
-    plt.tight_layout()
-    if save_fig:
-      plt.savefig(save_fig)
-      plt.close(fig)
-    else:
-      plt.show(block=False)
-      plt.pause(0.1)
-      plt.close()
-
-def plot_distribution(model: NormalizingFlow, ds: TensorDataset, savefig = None): 
+def plot_distribution(model, ds: TensorDataset, savefig = None): 
   """
   Only meaningful for 2-dimensional datasets. 
   Used to see how it evolves. 
   """
+  if model.idim != torch.Size([2]): 
+    raise AttributeError("The dimension must be 2. ")
+
   model.eval()
   with torch.no_grad():
     # Create a grid of points
@@ -53,6 +36,30 @@ def plot_distribution(model: NormalizingFlow, ds: TensorDataset, savefig = None)
     if savefig:
       plt.savefig(savefig)
       plt.close()
+    else:
+      plt.show(block=False)
+      plt.pause(0.1)
+      plt.close()
+
+def plot_samples(model, savefig=None): 
+  """
+  Randomly sample 25 and visualize them. 
+  """ 
+  # This is only meaningful for high dimensional datasets like MNIST. 
+  if len(model.idim) != 3 and model.idim.numel() != 784:
+    raise AttributeError("The dimension is wrong.")
+
+  model.eval()
+  with torch.no_grad(): 
+    # make sure to permute so that channel dimension is last
+    img = model.sample(25).reshape(-1, 1, 28, 28).permute(0, 2, 3, 1).detach().cpu().numpy()
+    fig, axes = plt.subplots(5, 5, figsize=(10, 10))
+    for i, ax in enumerate(axes.flat):
+        ax.imshow(img[i], cmap='gray'); ax.axis('off')
+    plt.tight_layout()
+    if savefig:
+      plt.savefig(savefig)
+      plt.close(fig)
     else:
       plt.show(block=False)
       plt.pause(0.1)
