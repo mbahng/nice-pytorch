@@ -51,7 +51,7 @@ def plot_samples(model, savefig=None):
   model.eval()
   with torch.no_grad(): 
     # make sure to permute so that channel dimension is last
-    img = model.sample(25).reshape(-1, 1, 28, 28).permute(0, 2, 3, 1).detach().cpu().numpy()
+    img = model.sample(25).reshape(-1, *model.idim).permute(0, 2, 3, 1).detach().cpu().numpy()
     fig, axes = plt.subplots(5, 5, figsize=(10, 10))
     for i, ax in enumerate(axes.flat):
         ax.imshow(img[i], cmap='gray'); ax.axis('off')

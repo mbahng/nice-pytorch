@@ -1,4 +1,4 @@
-# normalizing-flows--pytorch
+# normalizing-flows-pytorch
 
 Implementation of normalizing flow models: NICE, RealNVP, Glow, cGlow.
 
@@ -18,6 +18,8 @@ pip install torch matplotlib torchvision scikit-learn tqdm
 Original Repo: https://github.com/DakshIdnani/pytorch-nice (has a obvious and easily fixable bugs in it tho)
 
 ## Implementation Details
+
+   Batchnorm outputting nan during eval? 
 
 ### LeakyReLU 
 

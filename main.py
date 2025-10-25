@@ -8,14 +8,14 @@ import viz
 torch.manual_seed(42)
 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-ds = mnist_flat()
-dl = torch.utils.data.DataLoader(ds, batch_size=256, shuffle=True) 
+ds = cifar10()
+dl = torch.utils.data.DataLoader(ds, batch_size=64, shuffle=True) 
 
-model = NICE(
+model = RealNVP(
   idim=ds[0][0].size(), 
-  n_coupling_layers=4, 
-  neural_net_layers=6,
-  hdim=torch.Size([1000]), 
+  n_scales=3,
+  neural_net_layers=4,
+  hdim=torch.Size([64]), 
   device=device
 )
 
