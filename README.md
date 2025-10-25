@@ -15,9 +15,11 @@ conda create -n nice-pytorch python=3.13
 pip install torch matplotlib torchvision scikit-learn tqdm
 ``` 
 
-Original Repo: https://github.com/DakshIdnani/pytorch-nice (has a obvious and easily fixable bugs in it tho)
+Original Repo: https://github.com/DakshIdnani/pytorch-nice (has a obvious and easily fixable bugs in it tho) 
 
-## Implementation Details
+A good repo for RealNVP is harder to find, but [this one](https://github.com/taesungp/real-nvp) has [direct approval](https://www.reddit.com/r/MachineLearning/comments/584z36/r_density_estimation_using_real_nvp_talk_at/) from Dinh himself. The only problem is that this is on Tensorflow, so I also used a more recent, though seemingly less complete(?) repo on PyTorch that is available [here](https://github.com/shirleyzhu233/realNVP). 
+
+## NICE Implementation Details
 
    Batchnorm outputting nan during eval? 
 

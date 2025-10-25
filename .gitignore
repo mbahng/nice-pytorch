@@ -4,3 +4,4 @@ dataset/*
 !dataset/one_dim.py
 !dataset/two_dim.py
 .DS_Store
+fig/*.png
