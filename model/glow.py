@@ -1,7 +1,7 @@
 import torch 
 import torch.nn as nn
 import torch.nn.functional as F
-from .distribution import LogisticDistribution, Normal
+from .distribution import Normal
 import torch.nn.utils.weight_norm as weight_norm
 from torch import Tensor, Size
 from enum import Enum

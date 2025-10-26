@@ -8,11 +8,13 @@ Implementation of normalizing flow models: NICE, RealNVP, Glow, cGlow.
 | NICE fit on two Gaussians | RealNVP fit on Moons |
 | ![image](fig/readme/nice_mnist.png) | ![image](fig/readme/realnvp_cifar10_ep40.png) |
 | NICE sample generation for MNIST | RealNVP sample generation for CIFAR10 |
+| ![image](fig/readme/glow_flowers_ep41.png) | ![image]() |
+| Glow sample generation for Flowers102. The depth may have to be increased to increase the range of the convolutional layers(?) and prevent grid-like behavior. | |
 
 Setup. 
 ```
 conda create -n nice-pytorch python=3.13
-pip install torch matplotlib torchvision scikit-learn tqdm
+pip install torch matplotlib torchvision scikit-learn tqdm gdown
 ``` 
 
 NICE was pretty easy to implement, and there is a minimal implementation [here](https://github.com/DakshIdnani/pytorch-nice), though it has obvious and easily fixable bugs in it. A good repo for RealNVP is harder to find, but [this one](https://github.com/taesungp/real-nvp) has [direct approval](https://www.reddit.com/r/MachineLearning/comments/584z36/r_density_estimation_using_real_nvp_talk_at/) from Dinh himself. The only problem is that this is on Tensorflow, so I also used a more recent, though seemingly less complete(?) repo on PyTorch that is available [here](https://github.com/shirleyzhu233/realNVP). 
