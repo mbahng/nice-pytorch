@@ -9,3 +9,5 @@ def cifar10():
 def svhn(): 
   return datasets.SVHN(root='./dataset', train=True, transform=transforms.ToTensor(), download=True)
 
+def celebA(): 
+  return datasets.CelebA(root='./dataset', train=True, transform=transforms.ToTensor(), download=True)
