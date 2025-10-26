@@ -12,9 +12,18 @@ device = "cuda" if torch.cuda.is_available() else "cpu"
 ds = cifar10()
 dl = torch.utils.data.DataLoader(ds, batch_size=256, shuffle=True) 
 
-model = RealNVP(
+# model = RealNVP(
+#   idim=ds[0][0].size(), 
+#   n_scales=2, # should always be 2 for cifar10
+#   neural_net_layers=8,
+#   hdim=torch.Size([64]), 
+#   device=device
+# )
+
+model = Glow(
   idim=ds[0][0].size(), 
-  n_scales=2, # should always be 2 for cifar10
+  n_levels=2, # should always be 2 for cifar10 
+  flow_depth=3, 
   neural_net_layers=8,
   hdim=torch.Size([64]), 
   device=device

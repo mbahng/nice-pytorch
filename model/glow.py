@@ -15,29 +15,83 @@ class ActNorm(nn.Module):
   where on the very first batch we clever initialize the s,t so that the output
   is unit gaussian. As described in Glow paper.
   """
-  def __init__(self, idim: Size): 
+  def __init__(self, idim: Size):
     super().__init__()
-    # need this so that we can initialize the weights using first batch of training data. 
+    # Flag for data-dependent initialization using first batch
     self.data_dep_init_done = False
-    self.s = nn.Parameter(torch.randn(idim, requires_grad=True))
-    self.b = nn.Parameter(torch.randn(idim, requires_grad=True))
 
-  def forward(self, x, z):
-    # first batch is used for init
+    # Extract number of channels
+    if isinstance(idim, int):
+        num_channels = idim
+    elif isinstance(idim, (tuple, list)):
+        num_channels = idim[0]
+    else:
+        raise ValueError(f"idim must be int or tuple, got {type(idim)}")
+
+    # Parameters have shape (1, channels, 1, 1) for broadcasting
+    param_shape = (1, num_channels, 1, 1)
+
+    # Log-scale parameter (initialized via data-dependent init)
+    self.logs = nn.Parameter(torch.zeros(param_shape))
+    # Translation parameter (initialized via data-dependent init)
+    self.t = nn.Parameter(torch.zeros(param_shape))
+
+  def forward(self, x, logdet_accum, z):
+    """
+    Forward pass: x_out = x * exp(logs) + t
+
+    Args:
+        x: Input tensor, shape (batch, channels, height, width)
+        logdet_accum: Accumulated log determinant, shape (batch,)
+        z: Additional state to pass through
+
+    Returns:
+        Tuple of (x_out, logdet_accum + logdet, z)
+    """
+    # Data-dependent initialization using first batch
     if not self.data_dep_init_done:
-      self.s.data = (-torch.log(x.std(dim=0, keepdim=True))).detach()
-      self.t.data = (-(x * torch.exp(self.s)).mean(dim=0, keepdim=True)).detach()
-      self.data_dep_init_done = True
-    x = x * torch.exp(self.s) + self.t
-    log_det = torch.sum(self.s, dim=1)
-    return x, log_det, z
+        with torch.no_grad():
+            # Mean and std over batch and spatial dimensions
+            mean = x.mean(dim=(0, 2, 3), keepdim=True)  # (1, channels, 1, 1)
+            std = x.std(dim=(0, 2, 3), keepdim=True)    # (1, channels, 1, 1)
+
+            # Initialize logs so that x * exp(logs) has unit variance
+            self.logs.data = -torch.log(std + 1e-6)
+            # Initialize t so that (x * exp(logs)) + t has zero mean
+            self.t.data = -(mean * torch.exp(self.logs))
+
+        self.data_dep_init_done = True
+
+    # Forward transformation
+    x = x * torch.exp(self.logs) + self.t
+
+    # Compute log determinant
+    # Sum over channel dimension and multiply by spatial dimensions (height * width)
+    spatial_size = x.shape[2] * x.shape[3]  # height * width
+    logdet = self.logs.sum() * spatial_size  # Scalar
+
+    # Broadcast scalar logdet to batch dimension and add to accumulator
+    if logdet_accum is None:
+        logdet_accum = logdet.expand(x.shape[0])
+    else:
+        logdet_accum = logdet_accum + logdet
+
+    return x, logdet_accum, z
 
   def inverse(self, x, z):
-    x = (x - self.b) * torch.exp(-self.s)
-    # log_det = torch.sum(-self.s, dim=1)
+    """
+    Inverse pass: x_out = (x - t) * exp(-logs)
+
+    Args:
+        x: Input tensor, shape (batch, channels, height, width)
+        z: Additional state to pass through
+
+    Returns:
+        Tuple of (x_out, z)
+    """
+    x = (x - self.t) * torch.exp(-self.logs)
     return x, z
 
-class Invertible1x1Conv(nn.Module): 
   """
   Invertible 1x1 Convolution in Section 3.2
   Calculating the log determinant of this linear map W is O(c^3), but can be reduced to 
@@ -48,38 +102,135 @@ class Invertible1x1Conv(nn.Module):
   where P is a permutation matrix, L lower triangular, U upper triangular with 0s on 
   diagonal, and s is a vector. Then, the log determinant is 
   
-    log |det(W)| = \sum log()|s|)
+    log |det(W)| = sum log()|s|)
   """
 
-  def __init__(self, dim):
-    super().__init__()
-    self.dim = dim
-    Q = torch.nn.init.orthogonal_(torch.randn(dim, dim))
-    P, L, U = torch.lu_unpack(*Q.lu())
-    self.P = P # remains fixed during optimization
-    self.L = nn.Parameter(L) # lower triangular portion
-    self.S = nn.Parameter(U.diag()) # "crop out" the diagonal to its own parameter
-    self.U = nn.Parameter(torch.triu(U, diagonal=1)) # "crop out" diagonal, stored in S
+class Invertible1x1Conv(nn.Module):
+    """
+    Invertible 1x1 Convolution using LU decomposition.
 
-  def _assemble_W(self):
-    """ assemble W from its pieces (P, L, U, S) """
-    L = torch.tril(self.L, diagonal=-1) + torch.diag(torch.ones(self.dim))
-    U = torch.triu(self.U, diagonal=1)
-    W = self.P @ L @ (U + torch.diag(self.S))
-    return W
+    The weight matrix W is decomposed as W = P @ L @ U where:
+    - P is a permutation matrix (fixed during training)
+    - L is lower triangular with ones on diagonal
+    - U is upper triangular with learned diagonal
 
-  def forward(self, x, log_det_accum, z):
-    W = self._assemble_W()
-    x = x @ W
-    log_det = torch.sum(torch.log(torch.abs(self.S)))
-    return x, log_det_accum + log_det, z
+    This parameterization allows efficient computation of determinant and inverse.
 
-  def inverse(self, x, z):
-    W = self._assemble_W()
-    W_inv = torch.inverse(W) # this is the expensive operation! 
-    x = x @ W_inv
-    # log_det = -torch.sum(torch.log(torch.abs(self.S)))
-    return x, z
+    Args:
+        idim: Input dimension(s). Expected to be channels (int) or tuple containing channels.
+    """
+    def __init__(self, idim: Size):
+        super().__init__()
+
+        # Extract number of channels
+        if isinstance(idim, int):
+            num_channels = idim
+        elif isinstance(idim, (tuple, list)):
+            num_channels = idim[0]
+        else:
+            raise ValueError(f"idim must be int or tuple, got {type(idim)}")
+
+        self.num_channels = num_channels
+
+        # Initialize with a random orthogonal matrix
+        Q = torch.nn.init.orthogonal_(torch.randn(num_channels, num_channels))
+
+        # LU decomposition
+        P, L, U = torch.lu_unpack(*torch.linalg.lu_factor(Q))
+
+        # P remains fixed during optimization (permutation matrix)
+        self.register_buffer('P', P)
+
+        # Store the sign of the diagonal separately (fixed)
+        s_sign = torch.sign(U.diag())
+        self.register_buffer('s_sign', s_sign)
+
+        # L: lower triangular with ones on diagonal (only store the lower part)
+        self.L = nn.Parameter(L)
+
+        # log(|S|): log absolute value of diagonal (learnable)
+        self.log_s = nn.Parameter(torch.log(torch.abs(U.diag())))
+
+        # U: upper triangular without diagonal (only store upper part)
+        self.U = nn.Parameter(torch.triu(U, diagonal=1))
+
+    def _assemble_W(self):
+        """
+        Assemble W from its pieces (P, L, U, S).
+
+        Returns:
+            W: Weight matrix of shape (num_channels, num_channels)
+        """
+        # L: lower triangular with ones on diagonal
+        L = torch.tril(self.L, diagonal=-1) + torch.eye(self.num_channels, device=self.L.device)
+
+        # U: upper triangular with learned diagonal
+        U = torch.triu(self.U, diagonal=1) + torch.diag(self.s_sign * torch.exp(self.log_s))
+
+        # W = P @ L @ U
+        W = self.P @ L @ U
+
+        return W
+
+    def forward(self, x, logdet_accum, z):
+        """
+        Forward pass: Applies 1x1 convolution with weight W.
+
+        Args:
+            x: Input tensor, shape (batch, channels, height, width)
+            logdet_accum: Accumulated log determinant, shape (batch,)
+            z: Additional state to pass through
+
+        Returns:
+            Tuple of (x_out, logdet_accum + logdet, z)
+        """
+        batch, channels, height, width = x.shape
+
+        # Assemble weight matrix
+        W = self._assemble_W()
+
+        # Reshape W for 1x1 convolution: (channels, channels) -> (channels, channels, 1, 1)
+        W_conv = W.unsqueeze(2).unsqueeze(3)
+
+        # Apply 1x1 convolution
+        x = F.conv2d(x, W_conv)
+
+        # Compute log determinant
+        # log|det(W)| = sum(log|S|), then multiply by spatial dimensions
+        logdet = torch.sum(self.log_s) * (height * width)
+
+        # Add to accumulated logdet
+        if logdet_accum is None:
+            logdet_accum = logdet.expand(batch)
+        else:
+            logdet_accum = logdet_accum + logdet
+
+        return x, logdet_accum, z
+
+    def inverse(self, x, z):
+        """
+        Inverse pass: Applies 1x1 convolution with weight W^{-1}.
+
+        For LU decomposition: W^{-1} = U^{-1} @ L^{-1} @ P^{-1}
+
+        Args:
+            x: Input tensor, shape (batch, channels, height, width)
+            z: Additional state to pass through
+
+        Returns:
+            Tuple of (x_out, z)
+        """
+        # Assemble weight matrix and compute inverse
+        W = self._assemble_W()
+        W_inv = torch.inverse(W)
+
+        # Reshape for 1x1 convolution: (channels, channels) -> (channels, channels, 1, 1)
+        W_inv_conv = W_inv.unsqueeze(2).unsqueeze(3)
+
+        # Apply 1x1 convolution with inverse weight
+        x = F.conv2d(x, W_inv_conv)
+
+        return x, z
 
 class Mask(Enum): 
   Checkerboard0 = 1 
