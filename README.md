@@ -6,8 +6,8 @@ Implementation of normalizing flow models: NICE, RealNVP, Glow, cGlow.
 |----------|----------|
 | ![image](fig/readme/two_gaussians.png) | ![image](fig/readme/moons.png) | 
 | NICE fit on two Gaussians | RealNVP fit on Moons |
-| ![image](fig/readme/nice_mnist.png) | ![image](fig/readme/realnvp_mnist.png) |
-| NICE sample generation for MNIST | RealNVP sample generation for MNIST |
+| ![image](fig/readme/nice_mnist.png) | ![image](fig/readme/realnvp_cifar10_ep40.png) |
+| NICE sample generation for MNIST | RealNVP sample generation for CIFAR10 |
 
 Setup. 
 ```
@@ -15,9 +15,7 @@ conda create -n nice-pytorch python=3.13
 pip install torch matplotlib torchvision scikit-learn tqdm
 ``` 
 
-Original Repo: https://github.com/DakshIdnani/pytorch-nice (has a obvious and easily fixable bugs in it tho) 
-
-A good repo for RealNVP is harder to find, but [this one](https://github.com/taesungp/real-nvp) has [direct approval](https://www.reddit.com/r/MachineLearning/comments/584z36/r_density_estimation_using_real_nvp_talk_at/) from Dinh himself. The only problem is that this is on Tensorflow, so I also used a more recent, though seemingly less complete(?) repo on PyTorch that is available [here](https://github.com/shirleyzhu233/realNVP). 
+NICE was pretty easy to implement, and there is a minimal implementation [here](https://github.com/DakshIdnani/pytorch-nice), though it has obvious and easily fixable bugs in it. A good repo for RealNVP is harder to find, but [this one](https://github.com/taesungp/real-nvp) has [direct approval](https://www.reddit.com/r/MachineLearning/comments/584z36/r_density_estimation_using_real_nvp_talk_at/) from Dinh himself. The only problem is that this is on Tensorflow, so I also used a more recent, though seemingly less complete(?) repo on PyTorch that is available [here](https://github.com/shirleyzhu233/realNVP). 
 
 ## NICE Implementation Details
 
@@ -67,4 +65,44 @@ A good repo for RealNVP is harder to find, but [this one](https://github.com/tae
 
    Make sure you don't put gradients on the Gaussian/Logistic distribution. 
    They sample from logistic distribution for MNIST, SVHN, CIFAR-10. A standard normal for TFD. 
+
+
+## RealNVP Implementation Details 
+
+   Due to the `FactorOut` layer which moves half of the flow directly into the latent space and the other half continuing with the transformations, I set the `forward` function signatures to take in the `x` argument (the tensors continuing into the transformations) and `z` (the ones already in the latent space). 
+
+   | Figure 1 | Figure 2 |
+   |----------|----------|
+   | ![image](fig/readme/realnvp_cifar10_ep0.png) | ![image](fig/readme/realnvp_cifar10_ep1.png) | 
+   | RealNVP CIFAR10 for Epoch 0 | RealNVP CIFAR10 for Epoch 1 |
+
+
+### Gradient Norm Clipping 
+
+   I'm pretty sure this is important. You'll get pretty trash results without it. 
+
+   ```
+      torch.nn.utils.clip_grad_norm_(model.parameters(), 1.0)
+   ```
+      
+### Logit Transform 
+
+   You should make sure that even after dequantization, the images go through a logit transformation to map values in $[0, 1]$ to $(-\infty, +\infty)$. Since we don't want these exploding, there is a clipping term `alpha` that bounds it to small numbers. The paper set it to $\alpha = 0.05$, which I thought was pretty high, and some implmementations make it $\alpha = 10^{-5}$. 
+
+### ResNet Architecture 
+
+   The architecture of the resnet is actually pretty important. I just used 8 blocks consisting of 2 batch norm, 2 relus and 3 $3 \times 3$ convs, but this didn't work. I had to carefully follow the original repo. 
+
+### Tanh 
+
+   The tanh at the end of each residual CNN module is very important, as it prevents the weights from blowing up. However, we want more expressiveness, so we also include a scaling parameter. 
+
+### Weightnorm 
+
+   Maybe adding the weight norm to the CNN helps? Haven't tested this thoroughly, but the original repo implements it, although they do it completely manually. 
+
+### Discretization Correction 
+
+   When computing the log likliehood, you have to subtract it by `K * np.log(256.0)`, where `K` is the dimension of the image space. 
+
 
