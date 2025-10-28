@@ -20,10 +20,20 @@ pip install torch matplotlib torchvision scikit-learn tqdm gdown
 NICE was pretty easy to implement, and there is a minimal implementation [here](https://github.com/DakshIdnani/pytorch-nice), though it has obvious and easily fixable bugs in it. A good repo for RealNVP is harder to find, but [this one](https://github.com/taesungp/real-nvp) has [direct approval](https://www.reddit.com/r/MachineLearning/comments/584z36/r_density_estimation_using_real_nvp_talk_at/) from Dinh himself. The only problem is that this is on Tensorflow, so I also used a more recent, though seemingly less complete(?) repo on PyTorch that is available [here](https://github.com/shirleyzhu233/realNVP). 
 
 For glow, this might be worth looking into: https://github.com/chaiyujin/glow-pytorch. 
+Autoregressive flows: Kingma 2016, Papamakarios 2017, Huang 2018, Ziegler 2019 
+Continuous normalizing flows: Chen 2018, Grathwohl 2018, define transformation function using ODEs. 
+Trippe and Turner 2018: Radial flows to define univariate conditional probabilities. 
+Flow++ is an upgrade from Glow?
+
+In cGlow, you want to build a conditional invertible function $f: Z \times X \to Y$, where for a fixed $x$, 
+$$
+   f( f^{-1} (y; x); x) = y \quad \forall x \in X, \forall y \in Y
+$$
+so $\mathrm{dim}(X) = \mathrm{dim}(Y)$. Note that you condition on $x$ since you want to model $(y, z)$, which is like the opposite of cVAE, where you condition on $y$ since you want to model $(x, z)$. 
 
 ## NICE Implementation Details
 
-   Batchnorm outputting nan during eval? 
+   Batchnorm outputting nan during eval? Bug is fixed but todo maybe. 
 
 ### LeakyReLU 
 
