@@ -19,6 +19,8 @@ pip install torch matplotlib torchvision scikit-learn tqdm gdown
 
 NICE was pretty easy to implement, and there is a minimal implementation [here](https://github.com/DakshIdnani/pytorch-nice), though it has obvious and easily fixable bugs in it. A good repo for RealNVP is harder to find, but [this one](https://github.com/taesungp/real-nvp) has [direct approval](https://www.reddit.com/r/MachineLearning/comments/584z36/r_density_estimation_using_real_nvp_talk_at/) from Dinh himself. The only problem is that this is on Tensorflow, so I also used a more recent, though seemingly less complete(?) repo on PyTorch that is available [here](https://github.com/shirleyzhu233/realNVP). 
 
+For glow, this might be worth looking into: https://github.com/chaiyujin/glow-pytorch. 
+
 ## NICE Implementation Details
 
    Batchnorm outputting nan during eval? 
